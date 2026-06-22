@@ -1,0 +1,27 @@
+/**
+ * Processes a validated order.
+ * Generates an Order ID and classifies the tier.
+ * Returns { orderId, tier } — does not write to the Sheet.
+ *
+ * @param {Object} order   - The validated order object
+ * @param {number} rowNum  - 1-based sheet row number (for ID generation)
+ * @returns {{ orderId: string, tier: string }}
+ */
+function processOrder(order, rowNum) {
+
+  // Generate Order ID — prefix + zero-padded row number
+  // Row 2 = first data row → ORD-001
+  // Row 3 → ORD-002, Row 12 → ORD-011, Row 102 → ORD-101
+  const orderId = CONFIG.orderIdPrefix
+    + String(rowNum - 1).padStart(3, "0"); // subtract 1 for header row
+
+  // Classify tier by amount
+  // Standard: amount < CONFIG.tierThreshold (₱2,000)
+  // Priority: amount >= CONFIG.tierThreshold
+  const amount = Number(order.amount);
+  const tier   = amount >= CONFIG.tierThreshold ? "Priority" : "Standard";
+
+  Logger.log(`Processed: ${orderId} | ${tier} | ₱${amount} | ${order.customerName}`);
+
+  return { orderId, tier };
+}

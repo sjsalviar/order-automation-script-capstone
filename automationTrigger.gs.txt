@@ -1,0 +1,77 @@
+/**
+ * Triggered on every Google Form submission.
+ * Reads the new row, validates it, processes it, writes results back.
+ * Lesson 4 will add generateInvoice() and sendConfirmation() calls
+ * in the SUCCESS block below — no restructuring needed.
+ */
+function onFormSubmit(e) {
+  try {
+    // ── 1. GET SHEET AND NEW ROW ──────────────────────────────────────────
+    const ss     = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet  = ss.getSheetByName(CONFIG.sheetName);
+    const rowNum = sheet.getLastRow(); // the row just submitted
+    const rowData = sheet.getRange(rowNum, 1, 1, 7).getValues()[0];
+
+    Logger.log(`onFormSubmit fired — row ${rowNum}`);
+
+    // ── 2. BUILD ORDER OBJECT (column map applied here) ───────────────────
+    const order = {
+      timestamp:          rowData[0],
+      customerName:       rowData[1].toString().trim(),
+      email:              rowData[2].toString().trim().toLowerCase(),
+      serviceDescription: rowData[3].toString().trim(),
+      amount:             rowData[4],
+      deliveryDate:       rowData[5],
+      notes:              rowData[6].toString().trim() || "N/A"
+    };
+
+    // ── 3. VALIDATE ───────────────────────────────────────────────────────
+    const validationError = validateOrder(order);
+
+    if (validationError) {
+      // Validation failed — log, notify admin, write error status, stop
+      Logger.log(`Validation failed (row ${rowNum}): ${validationError}`);
+
+      GmailApp.sendEmail(
+        CONFIG.adminEmail,
+        `⚠ Pipeline error — row ${rowNum}`,
+        `Validation failed: ${validationError}\nRow: ${rowNum}\nData: ${JSON.stringify(order)}`
+      );
+
+      writeResult(sheet, rowNum, null, null, null, "⚠ " + validationError);
+      return; // stop — no document, no client email
+    }
+
+    // ── 4. PROCESS — generate Order ID and classify tier ──────────────────
+    const { orderId, tier } = processOrder(order, rowNum);
+    order.orderId = orderId; // attach to order object for Lesson 4
+    order.tier    = tier;
+
+    // ── 5. SUCCESS PATH ──────────────────────────────────────────────────
+    //
+    //   ╔══════════════════════════════════════════════════════════╗
+    //   ║  LESSON 4 inserts here:                                  ║
+    //   ║  const docUrl = generateInvoice(order);                  ║
+    //   ║  sendConfirmation(order, docUrl);                        ║
+    //   ╚══════════════════════════════════════════════════════════╝
+    //
+    // For now, invoiceUrl is left blank — populated in Lesson 4.
+    const invoiceUrl = ""; // ← Lesson 4 replaces this line
+
+    writeResult(sheet, rowNum, orderId, tier, invoiceUrl, "✓ processed");
+    Logger.log(`Done: ${orderId} (${tier}) — row ${rowNum}`);
+
+  } catch (err) {
+    // Unexpected error — catch, log, notify admin
+    Logger.log("Uncaught error: " + err.message);
+    try {
+      GmailApp.sendEmail(
+        CONFIG.adminEmail,
+        "Pipeline uncaught error",
+        err.message + "\n\nStack:\n" + err.stack
+      );
+    } catch (mailErr) {
+      Logger.log("Could not send error email: " + mailErr.message);
+    }
+  }
+}

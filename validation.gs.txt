@@ -1,0 +1,71 @@
+// ─── COLUMN MAP (from Lesson 2 design) ─────────────────────────────────────
+// Row index (0-based, after slice(1)):
+//   row[0] = A · Timestamp       (form, auto)
+//   row[1] = B · Customer Name   (form Q1)
+//   row[2] = C · Email Address   (form Q2)
+//   row[3] = D · Service Desc.   (form Q3)
+//   row[4] = E · Amount ₱        (form Q4)
+//   row[5] = F · Delivery Date   (form Q5)
+//   row[6] = G · Notes           (form Q6, optional)
+//
+// Sheet columns written by this script (1-based for getRange):
+//   Col 8  = H · Order ID        (generated)
+//   Col 9  = I · Order Tier      (classified)
+//   Col 10 = J · Invoice URL     (Lesson 4 — empty for now)
+//   Col 11 = K · Processing Status
+//   Col 12 = L · Processed At
+// ───────────────────────────────────────────────────────────────────────────
+
+const CONFIG = {
+  sheetName: "Raw", // tab name set in Lesson 2
+  orderIdPrefix: "ORD-", // prefix for generated Order IDs
+  tierThreshold: 2000, // ₱ — Standard below, Priority at or above
+  adminEmail: "sjs.alviar@gmail.com", // ← replace with your address
+
+  // Column positions (1-based for getRange calls)
+  cols: {
+    orderId:    8,   // H
+    tier:       9,   // I
+    invoiceUrl: 10,  // J — Lesson 4 populates this
+    status:     11,  // K
+    processedAt:12   // L
+  }
+};
+
+/**
+ * Validates all required fields in an order object.
+ * Returns null if valid, or a descriptive error string if not.
+ * Checks run in priority order — first failure stops evaluation.
+ */
+function validateOrder(order) {
+
+  // 1. Customer name — must be present and non-empty after trimming
+  if (!order.customerName || !order.customerName.trim()) {
+    return "blank customer name";
+  }
+
+  // 2. Email — present and matches basic email pattern
+  const emailPattern = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/; 
+  if (!order.email || !emailPattern.test(order.email.trim())) {
+    return "invalid email: " + (order.email || "(blank)");
+  }
+
+  // 3. Amount — must be a positive number
+  const amount = Number(order.amount);
+  if (isNaN(amount) || amount <= 0) {
+    return "invalid amount: " + (order.amount || "(blank)");
+  }
+
+  // 4. Service description — must be present
+  if (!order.serviceDescription || !order.serviceDescription.trim()) {
+    return "blank service description";
+  }
+
+  // 5. Delivery date — must be present (date picker makes format valid)
+  if (!order.deliveryDate) {
+    return "blank delivery date";
+  }
+
+  // All checks passed — order is valid
+  return null;
+}

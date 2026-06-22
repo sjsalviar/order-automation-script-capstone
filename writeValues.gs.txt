@@ -1,0 +1,24 @@
+/**
+ * Writes all script-generated values to one row of the Sheet.
+ * Uses a single setValues() call — one API round-trip for all 5 columns.
+ *
+ * @param {Sheet}  sheet    - The Raw sheet object
+ * @param {number} rowNum   - 1-based row number to write to
+ * @param {string|null} orderId   - Generated Order ID, or null on failure
+ * @param {string|null} tier      - "Standard" / "Priority", or null on failure
+ * @param {string|null} invoiceUrl - Drive URL from Lesson 4, or null for now
+ * @param {string} status   - "✓ processed" or "⚠ " + errorMessage
+ */
+function writeResult(sheet, rowNum, orderId, tier, invoiceUrl, status) {
+  const timestamp = new Date().toLocaleString("en-PH");
+
+  // Write all 5 output columns in one call — columns H through L (8–12)
+  // setValues() takes a 2D array: [[col8, col9, col10, col11, col12]]
+  sheet.getRange(rowNum, CONFIG.cols.orderId, 1, 5).setValues([[
+    orderId    || "",  // H — Order ID (blank on error)
+    tier       || "",  // I — Tier     (blank on error)
+    invoiceUrl || "",  // J — Invoice URL (blank until Lesson 4)
+    status,              // K — Processing Status
+    timestamp            // L — Processed At
+  ]]);
+}
