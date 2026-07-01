@@ -44,7 +44,7 @@ function onFormSubmit(e) {
 
     // ── 4. PROCESS — generate Order ID and classify tier ──────────────────
     const { orderId, tier } = processOrder(order, rowNum);
-    order.orderId = orderId; // attach to order object for Lesson 4
+    order.orderId = orderId;
     order.tier    = tier;
 
     // ── 5. SUCCESS PATH ──────────────────────────────────────────────────
@@ -55,8 +55,9 @@ function onFormSubmit(e) {
     //   ║  sendConfirmation(order, docUrl);                        ║
     //   ╚══════════════════════════════════════════════════════════╝
     //
-    // For now, invoiceUrl is left blank — populated in Lesson 4.
-    const invoiceUrl = ""; // ← Lesson 4 replaces this line
+   
+    const invoiceUrl = generateInvoice(order);
+    // sendConfirmation() added in Lesson 5 — after this line
 
     writeResult(sheet, rowNum, orderId, tier, invoiceUrl, "✓ processed");
     Logger.log(`Done: ${orderId} (${tier}) — row ${rowNum}`);

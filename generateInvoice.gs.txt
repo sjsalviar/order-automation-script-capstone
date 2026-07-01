@@ -1,0 +1,74 @@
+/**
+ * Copies the invoice template, fills all 8 placeholders,
+ * saves the document, and returns its Drive URL.
+ *
+ * @param {Object} order - Validated, processed order object with orderId and tier attached
+ * @returns {string} The Drive URL of the generated invoice document
+ */
+function generateInvoice(order) {
+
+  // ── 1. LOCATE TEMPLATE ────────────────────────────────────────────────
+  let templateFile, outputFolder;
+
+  try{
+    templateFile = DriveApp.getFileById(CONFIG.templateId);
+  } catch (e) {
+    throw new Error(`Template not found! Check CONFIG.templateId. (${e.message})`)
+  }
+
+  // ── 2. LOCATE OUTPUT FOLDER ───────────────────────────────────────────
+try {
+  outputFolder = DriveApp.getFolderById(CONFIG.invoicesFolderId);
+  // Folders support getFolders(); files don't. This forces the type check early.
+  outputFolder.getFolders();
+} catch (e) {
+  throw new Error(`CONFIG.invoicesFolderId (${CONFIG.invoicesFolderId}) is not a valid folder. (${e.message})`);
+}
+
+  // ── 3. COPY TEMPLATE ─────────────────────────────────────────────────
+  // Naming pattern: "Ana Reyes — ORD-001 — Invoice"
+  // Client name first makes the folder scannable alphabetically
+  const docName = `${order.customerName} — ${order.orderId} — Invoice`;
+  const copyFile = templateFile.makeCopy(docName, outputFolder);
+
+  // ── 4. OPEN AND GET BODY ─────────────────────────────────────────────
+  const doc  = DocumentApp.openById(copyFile.getId());
+  const body = doc.getBody();
+
+  // ── 5. REPLACE ALL 8 PLACEHOLDERS ────────────────────────────────────
+  // Order mirrors the placeholder map in Lesson 4.
+  // String must match the template EXACTLY — case, underscores, no spaces inside {{}}
+
+  // Identity fields
+  body.replaceText("{{order_id}}",           order.orderId);
+  body.replaceText("{{company_name}}", order.companyName || "N/A");
+  body.replaceText("{{client_name}}",        order.customerName);
+  body.replaceText("{{client_email}}",       order.email);
+
+  // Dates — format as localised string for the Philippines
+  const invoiceDate = new Date().toLocaleDateString("en-PH", {
+    year: "numeric", month: "long", day: "numeric"
+  });
+  const dueDate = new Date(order.deliveryDate).toLocaleDateString("en-PH", {
+    year: "numeric", month: "long", day: "numeric"
+  });
+  body.replaceText("{{invoice_date}}",       invoiceDate);
+  body.replaceText("{{due_date}}",           dueDate);
+
+  // Service details
+  body.replaceText("{{service_description}}", order.serviceDescription);
+  body.replaceText("{{notes}}",              order.notes || "N/A");
+
+  // Financial fields — format amount with peso sign and locale separators
+  const formattedTotal = "₱" + Number(order.amount).toLocaleString("en-PH", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+  body.replaceText("{{invoice_total}}",      formattedTotal);
+  body.replaceText("{{order_tier}}",         order.tier);
+
+  // ── 6. SAVE AND RETURN URL ───────────────────────────────────────────
+  doc.saveAndClose();
+  const url = copyFile.getUrl();
+  Logger.log(`Invoice generated: ${docName} → ${url}`);
+  return url;
+}

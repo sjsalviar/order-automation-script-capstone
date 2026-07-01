@@ -2,18 +2,19 @@
 // Row index (0-based, after slice(1)):
 //   row[0] = A · Timestamp       (form, auto)
 //   row[1] = B · Customer Name   (form Q1)
-//   row[2] = C · Email Address   (form Q2)
-//   row[3] = D · Service Desc.   (form Q3)
-//   row[4] = E · Amount ₱        (form Q4)
-//   row[5] = F · Delivery Date   (form Q5)
-//   row[6] = G · Notes           (form Q6, optional)
+//   row[2] = C · Email Address   (form Q3)
+//   row[3] = D · Service Desc.   (form Q4)
+//   row[4] = E · Amount ₱        (form Q5)
+//   row[5] = F · Delivery Date   (form Q6)
+//   row[6] = G · Notes           (form Q7, optional)
+//   row[7] = H . Company         (form Q2)
 //
 // Sheet columns written by this script (1-based for getRange):
-//   Col 8  = H · Order ID        (generated)
-//   Col 9  = I · Order Tier      (classified)
-//   Col 10 = J · Invoice URL     (Lesson 4 — empty for now)
-//   Col 11 = K · Processing Status
-//   Col 12 = L · Processed At
+//   Col 8  = I · Order ID        (generated)
+//   Col 9  = J · Order Tier      (classified)
+//   Col 10 = K · Invoice URL     (Lesson 4 — empty for now)
+//   Col 11 = L · Processing Status
+//   Col 12 = M · Processed At
 // ───────────────────────────────────────────────────────────────────────────
 
 const CONFIG = {
@@ -21,14 +22,16 @@ const CONFIG = {
   orderIdPrefix: "ORD-", // prefix for generated Order IDs
   tierThreshold: 2000, // ₱ — Standard below, Priority at or above
   adminEmail: "sjs.alviar@gmail.com", // ← replace with your address
+  templateId: "1DOP78F5OU18hD9avpFZrF0FZk5n2Y0Cf87fjrG-_LYk",
+  invoicesFolderId: "10WwSDeArzZRpApHpp9g944nXz409GR0R",
 
   // Column positions (1-based for getRange calls)
   cols: {
-    orderId:    8,   // H
-    tier:       9,   // I
-    invoiceUrl: 10,  // J — Lesson 4 populates this
-    status:     11,  // K
-    processedAt:12   // L
+    orderId:    9,   // I
+    tier:       10,   // J
+    invoiceUrl: 11,  // K — Lesson 4 populates this
+    status:     12,  // L
+    processedAt:13   // M
   }
 };
 
